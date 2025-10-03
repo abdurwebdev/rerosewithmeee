@@ -42,11 +42,13 @@ const loginUser = async (req,res) =>{
 
     if(loginUserWithEmail && loginPassword){
       var token = jwt.sign({id:loginUserWithEmail._id},process.env.JWT_SECRET,{expiresIn:"1h"})
-      res.cookie("token",token,{
-        httpOnly:true,
-        secure:process.env.NODE_ENV==="production",
-        sameSite:"strict",
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true,          // only on HTTPS
+        sameSite: "None",      // allow cross-site
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
       });
+      
       res.status(201).json({message:"Login Successfull"})
     }
     else{

@@ -145,10 +145,10 @@ const getSuggestedUsers = async (req, res) => {
     const currentUserId = req.user.id;
 
     const me = await User.findById(currentUserId).select('following');
-    const followingIds = (me?.following || []).map((u) => mongoose.Types.ObjectId(String(u)));
+    const followingIds = (me?.following || []).map((u) => new mongoose.Types.ObjectId(String(u)));
 
     const suggestions = await User.aggregate([
-      { $match: { _id: { $ne: mongoose.Types.ObjectId(currentUserId) } } },
+      { $match: { _id: { $ne: new mongoose.Types.ObjectId(currentUserId) } } },
       { $match: { _id: { $nin: followingIds } } },
       { $sample: { size: 8 } },
       { $project: { password: 0 } },

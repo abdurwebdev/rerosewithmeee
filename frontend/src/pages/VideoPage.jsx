@@ -29,7 +29,7 @@ const VideoPage = () => {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await axios.get(
+        const res = await axiosAuth.get(
           `${import.meta.env.VITE_API_URL}/api/user/post/${postId}`,
           { withCredentials: true }
         );
@@ -52,7 +52,7 @@ const VideoPage = () => {
 
     const fetchRecommended = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/posts`);
+        const res = await axiosAuth.get(`${import.meta.env.VITE_API_URL}/api/user/posts`);
         setRecommended(res.data.posts.filter((p) => p._id !== postId));
       } catch (error) {
         console.error("Failed to fetch recommended posts:", error);

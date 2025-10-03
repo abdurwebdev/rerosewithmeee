@@ -1,6 +1,6 @@
 import axios from 'axios';
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast, Toaster } from 'sonner';
 
 const Login = () => {
@@ -40,6 +40,10 @@ const Login = () => {
         <input onChange={(e)=>setPassword(e.target.value)} type="password" placeholder='Password....' className='px-3 py-2 bg-white rounded-xl text-black placeholder:text-black w-96 outline-0' />
         <input type="submit" value="Login" className='w-full bg-[#FF6C00] px-3 py-2 rounded-xl mt-5'/>
         </div>
+        <p className="mt-3 text-sm">
+    Don’t have an account?{" "}
+    <Link to="/signup" className="text-[#FF6C00] underline">Sign up</Link>
+  </p>
       </form>
       </div>
     </div>

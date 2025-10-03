@@ -20,7 +20,7 @@ app.use(cors({
 
 
 app.get("/",(req,res)=>{
-  res.send("Hello jhadbasjdbashdasd");
+  res.send("Hello jhadbasjdbashasdasdasddasd");
 })
 
 app.get("/test",(req,res)=>{

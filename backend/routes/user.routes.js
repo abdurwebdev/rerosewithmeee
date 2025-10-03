@@ -14,7 +14,7 @@ router.get("/search", checkToken, searchUsers);
 router.get("/suggested", checkToken, getSuggestedUsers);
 router.post("/createpost",checkToken,upload.fields([{ name: "media", maxCount: 1 }, { name: "thumbnail", maxCount: 1 }]),createPost)
 router.get("/posts",getPosts);
-router.get("/post/:postId", checkToken, getPostById);
+router.get("/post/:postId", getPostById);
 router.get("/posts/:userId",getPostsByUser)
 router.post("/like/:id",checkToken,likePost);
 router.post("/dislike/:id",checkToken,dislikePost);

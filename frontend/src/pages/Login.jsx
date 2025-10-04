@@ -23,12 +23,22 @@ const Login = () => {
         setEmail('')
         setPassword('')
     } catch (error) {
-      if(error.name==='ZodError'){
+      console.error(error);
+    
+      if (error.name === 'ZodError' && error.errors?.length > 0) {
         toast.error(error.errors[0].message);
+      } else if (error.response) {
+        // Axios server error (e.g. 400, 500)
+        toast.error(error.response.data?.message || "Server Error!");
+      } else if (error.request) {
+        // No response from server
+        toast.error("Network error. Please check your connection!");
+      } else {
+        // Any other unexpected error
+        toast.error("An unexpected error occurred!");
       }
-       console.error(error);
     }
-  }
+      }
   return (
     <>
     <Toaster position='top-right' richColors/>

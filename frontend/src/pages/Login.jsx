@@ -2,15 +2,18 @@ import axios from 'axios';
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { toast, Toaster } from 'sonner';
+import { loginSchema } from '../validations/authValidation';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email,setEmail] = useState('Enter your email');
-  const [password,setPassword] = useState('Enter your password');
+  const [email,setEmail] = useState('');
+  const [password,setPassword] = useState('');
   const handleSubmit = async (e) =>{
     e.preventDefault();
+    const data = {email,password};
     try {
-        let res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`,{email,password},{
+      loginSchema.parse(data);
+        let res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`,data,{
           withCredentials:true
         })
         toast.success("Login Successful!");
@@ -20,6 +23,9 @@ const Login = () => {
         setEmail('')
         setPassword('')
     } catch (error) {
+      if(error.name==='ZodError'){
+        toast.error(error.errors[0].message);
+      }
        console.error(error);
     }
   }

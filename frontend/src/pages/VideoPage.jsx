@@ -266,7 +266,7 @@ const VideoPage = () => {
             >
               {isFollowing ? "Unfollow" : "Follow"}
             </button>
-            <span>{followersCount} Followersasdasds</span>
+            <span>{followersCount} Followers</span>
 
             <button
               onClick={handleLike}

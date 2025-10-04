@@ -2,6 +2,7 @@ import axios from 'axios';
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { toast, Toaster } from 'sonner';
+import { signupSchema } from '../validations/authValidation';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -13,14 +14,21 @@ const Signup = () => {
 
   const handleSubmit = async (e) =>{
     e.preventDefault();
+    const data = {username,email,password,bio,avatar};
     try {
-      let res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`,{username,email,password,bio,avatar},{withCredentials:true})
+      signupSchema.parse(data);
+      let res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`,data,{withCredentials:true})
       toast.success("User created Successfully!")
       setTimeout(()=>{
           navigate('/');
       },1500)
     } catch (error) {
-      toast.error("Server Error!")
+      if(error.name==='ZodError'){
+        toast.error(error.errors[0].message);
+      }
+      else{
+        toast.error("Server Error!");
+      }
       console.error(error);
     }
     setAvatar('');

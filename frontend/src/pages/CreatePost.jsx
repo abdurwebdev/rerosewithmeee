@@ -23,59 +23,57 @@ const CreatePost = () => {
     withCredentials: true,
   });
 
-  // ✅ Compress video before upload
   const compressVideo = async (file) => {
     if (!file || !file.type.startsWith("video/")) return { compressedFile: file };
-
+  
     try {
-      // Dynamic import to avoid Vite ESM error
-      if (!createFFmpeg) {
-        const ffmpegModule = await import("@ffmpeg/ffmpeg");
-        createFFmpeg = ffmpegModule.createFFmpeg;
-        fetchFile = ffmpegModule.fetchFile;
-      }
-
-      if (!ffmpegInstance) {
-        ffmpegInstance = createFFmpeg({
-          log: true,
-          corePath: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js",
-        });
-      }
-
-      if (!ffmpegInstance.isLoaded()) await ffmpegInstance.load();
-
+      // ✅ Dynamically import FFmpeg correctly
+      const { createFFmpeg, fetchFile } = await import("@ffmpeg/ffmpeg");
+  
+      const ffmpeg = createFFmpeg({
+        log: true,
+        corePath: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js",
+      });
+  
+      // ✅ Ensure FFmpeg is loaded
+      if (!ffmpeg.isLoaded()) await ffmpeg.load();
+  
       const inputName = "input.mp4";
       const outputName = "output.mp4";
-      ffmpegInstance.FS("writeFile", inputName, await fetchFile(file));
-
-      // Compress the video
-      await ffmpegInstance.run(
+  
+      ffmpeg.FS("writeFile", inputName, await fetchFile(file));
+  
+      // ✅ Compression command (safe & compatible)
+      await ffmpeg.run(
         "-i",
         inputName,
         "-vcodec",
         "libx264",
         "-crf",
-        "28",
+        "30", // higher = smaller file
         "-preset",
-        "veryfast",
+        "ultrafast",
+        "-movflags",
+        "+faststart",
         outputName
       );
-
-      const data = ffmpegInstance.FS("readFile", outputName);
-      const compressedFile = new File([data.buffer], file.name, {
-        type: "video/mp4",
-      });
-
+  
+      const data = ffmpeg.FS("readFile", outputName);
+      const compressedFile = new File([data.buffer], file.name, { type: "video/mp4" });
+  
       const before = (file.size / 1024 / 1024).toFixed(2);
       const after = (compressedFile.size / 1024 / 1024).toFixed(2);
       setSizeInfo({ before, after });
-
+  
+      console.log(`✅ Compressed from ${before}MB → ${after}MB`);
       return { compressedFile };
     } catch (err) {
-      console.error("Compression failed:", err);
-      return { compressedFile: file };
+      console.error("❌ Compression failed:", err);
+      toast.error("Compression failed — uploading original video instead.");
+      return { compressedFile: file }; // fallback to original
     }
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,7 +130,7 @@ const CreatePost = () => {
 
   return (
     <div className="w-full min-h-screen bg-black text-white px-5 py-6">
-      <h1 className="text-2xl font-bold mb-4">Create Post with compression</h1>
+      <h1 className="text-2xl font-bold mb-4">Create Post with compressionsssss</h1>
       <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
         {/* Post Type */}
         <div className="flex gap-3">

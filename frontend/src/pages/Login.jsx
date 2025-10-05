@@ -102,7 +102,7 @@ const Login = () => {
             </div>
 
             <p className="mt-3 text-sm">
-              Don’t have an account?{' '}
+              Don’t haves an account?{' '}
               <Link to="/signup" className="text-[#FF6C00] underline">
                 Sign up
               </Link>

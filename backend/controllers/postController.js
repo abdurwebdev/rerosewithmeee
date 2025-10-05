@@ -1,11 +1,10 @@
 const Post = require('../models/Post');
 const streamifier = require('streamifier');
 const cloudinary = require('../utils/cloudinary');
-const fs = require("fs");
-const { compressVideo } = require("../utils/compressVideo");
 const User = require('../models/User');
 const Comment = require('../models/Comment');
 const Save = require('../models/Save');
+
 const createPost = async (req, res) => {
   try {
     const { type, title, caption, tags } = req.body;
@@ -19,66 +18,49 @@ const createPost = async (req, res) => {
     let mediaPublicId = null;
     let thumbnailPublicId = null;
 
-    // --- 1️⃣ Handle image / video uploads ---
+    // --- 1️⃣ Upload main media (image/video) ---
     if (type !== "text") {
       if (!req.files || !req.files.media) {
         return res.status(400).json({ success: false, message: "Media file is required for image/video post" });
       }
 
-      // 🟢 IMAGE upload
-      if (type === "image") {
-        const uploadResult = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { resource_type: "image", folder: "posts_mern" },
-            (error, result) => (error ? reject(error) : resolve(result))
-          );
-          streamifier.createReadStream(req.files.media[0].buffer).pipe(stream);
-        });
-
-        mediaUrl = uploadResult.secure_url;
-        mediaPublicId = uploadResult.public_id;
-      }
-
-      // 🎥 VIDEO upload with compression
-      if (type === "video") {
-        // Step 1 — Compress video
-        const compressedPath = await compressVideo(req.files.media[0].buffer, req.files.media[0].originalname);
-
-        // Step 2 — Upload compressed video to Cloudinary
-        const videoUpload = await new Promise((resolve, reject) => {
-          cloudinary.uploader.upload(
-            compressedPath,
-            { resource_type: "video", folder: "posts_mern" },
+      const streamUpload = (file, resourceType, folder = "posts_mern") => {
+        return new Promise((resolve, reject) => {
+          let stream = cloudinary.uploader.upload_stream(
+            {
+              resource_type: resourceType,
+              folder: folder,
+            },
             (error, result) => {
-              fs.unlinkSync(compressedPath); // cleanup local compressed file
-              if (error) reject(error);
-              else resolve(result);
+              if (result) resolve(result);
+              else reject(error);
             }
           );
+          streamifier.createReadStream(file.buffer).pipe(stream);
         });
+      };
 
-        mediaUrl = videoUpload.secure_url;
-        mediaPublicId = videoUpload.public_id;
+      // Upload main media
+      const mediaResult = await streamUpload(req.files.media[0], type === "video" ? "video" : "image");
+      mediaUrl = mediaResult.secure_url;
+      mediaPublicId = mediaResult.public_id;
 
-        // Step 3 — Upload thumbnail
+      // --- 2️⃣ Upload custom thumbnail if type = video ---
+      if (type === "video") {
         if (!req.files.thumbnail) {
-          return res.status(400).json({ success: false, message: "Thumbnail is required for video post" });
+          return res.status(400).json({
+            success: false,
+            message: "Thumbnail is required for video post",
+          });
         }
 
-        const thumbUpload = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { resource_type: "image", folder: "posts_mern/thumbnails" },
-            (error, result) => (error ? reject(error) : resolve(result))
-          );
-          streamifier.createReadStream(req.files.thumbnail[0].buffer).pipe(stream);
-        });
-
-        thumbnailUrl = thumbUpload.secure_url;
-        thumbnailPublicId = thumbUpload.public_id;
+        const thumbnailResult = await streamUpload(req.files.thumbnail[0], "image", "posts_mern/thumbnails");
+        thumbnailUrl = thumbnailResult.secure_url;
+        thumbnailPublicId = thumbnailResult.public_id;
       }
     }
 
-    // --- 2️⃣ Save Post in MongoDB ---
+    // --- 3️⃣ Save post in MongoDB ---
     const newPost = await Post.create({
       user: req.user.id,
       type,
@@ -88,15 +70,15 @@ const createPost = async (req, res) => {
       mediaPublicId,
       thumbnailUrl,
       thumbnailPublicId,
-      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
+      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
     });
 
-    // --- 3️⃣ Response ---
     return res.status(201).json({
       success: true,
-      message: "Post created successfully (with compression if video)",
+      message: "Post created successfully",
       post: newPost,
     });
+
   } catch (error) {
     console.error("Error creating post:", error);
     return res.status(500).json({
@@ -106,7 +88,6 @@ const createPost = async (req, res) => {
     });
   }
 };
-
 
 const getPostById = async (req, res) => {
   try {
